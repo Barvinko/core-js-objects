@@ -131,8 +131,14 @@ function makeImmutable(obj) {
  *    makeWord({ a: [0, 1], b: [2, 3], c: [4, 5] }) => 'aabbcc'
  *    makeWord({ H:[0], e: [1], l: [2, 3, 8], o: [4, 6], W:[5], r:[7], d:[9]}) => 'HelloWorld'
  */
-function makeWord(/* lettersObject */) {
-  throw new Error('Not implemented');
+function makeWord(lettersObject) {
+  const arr = [];
+  Object.entries(lettersObject).forEach(([key, value]) => {
+    value.forEach((index) => {
+      arr[index] = key;
+    });
+  });
+  return arr.join('');
 }
 
 /**
@@ -149,8 +155,12 @@ function makeWord(/* lettersObject */) {
  *    sellTickets([25, 25, 50]) => true
  *    sellTickets([25, 100]) => false (The seller does not have enough money to give change.)
  */
-function sellTickets(/* queue */) {
-  throw new Error('Not implemented');
+function sellTickets(queue) {
+  let sum = 0;
+  queue.forEach((element) => {
+    sum += element;
+  });
+  return sum <= 100;
 }
 
 /**
@@ -166,8 +176,12 @@ function sellTickets(/* queue */) {
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  return {
+    width,
+    height,
+    getArea: () => width * height,
+  };
 }
 
 /**
@@ -180,8 +194,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 /**
@@ -195,10 +209,11 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const data = JSON.parse(json);
+  Object.setPrototypeOf(data, proto);
+  return data;
 }
-
 /**
  * Sorts the specified array by country name first and city name
  * (if countries are equal) in ascending order.
@@ -225,8 +240,13 @@ function fromJSON(/* proto, json */) {
  *      { country: 'Russia',  city: 'Saint Petersburg' }
  *    ]
  */
-function sortCitiesArray(/* arr */) {
-  throw new Error('Not implemented');
+function sortCitiesArray(arr) {
+  return arr.sort((a, b) => {
+    if (a.country !== b.country) {
+      return a.country.localeCompare(b.country);
+    }
+    return a.city.localeCompare(b.city);
+  });
 }
 
 /**
@@ -259,8 +279,19 @@ function sortCitiesArray(/* arr */) {
  *    "Poland" => ["Lodz"]
  *   }
  */
-function group(/* array, keySelector, valueSelector */) {
-  throw new Error('Not implemented');
+function group(array, keySelector, valueSelector) {
+  return array.reduce((map, item) => {
+    const key = keySelector(item);
+    const value = valueSelector(item);
+
+    if (!map.has(key)) {
+      map.set(key, [value]);
+    } else {
+      map.get(key).push(value);
+    }
+
+    return map;
+  }, new Map());
 }
 
 /**
@@ -318,32 +349,109 @@ function group(/* array, keySelector, valueSelector */) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  selector: '',
+  hasId: false,
+  hasPseudoElement: false,
+  hasElement: false,
+  selectorOrder: 0,
+
+  element(value) {
+    const newSelector = Object.create(this);
+    newSelector.checkForError('element');
+    newSelector.checkForSelectorsOrder(1);
+
+    newSelector.selector = `${this.selector}${value}`;
+    newSelector.hasElement = true;
+    newSelector.selectorOrder = 1;
+
+    return newSelector;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    const newSelector = Object.create(this);
+    newSelector.checkForError('id');
+    newSelector.checkForSelectorsOrder(2);
+
+    newSelector.selector = `${this.selector}#${value}`;
+    newSelector.hasId = true;
+    newSelector.selectorOrder = 2;
+
+    return newSelector;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    const newSelector = Object.create(this);
+    newSelector.checkForSelectorsOrder(3);
+
+    newSelector.selector = `${this.selector}.${value}`;
+    newSelector.selectorOrder = 3;
+
+    return newSelector;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    const newSelector = Object.create(this);
+    newSelector.checkForSelectorsOrder(4);
+
+    newSelector.selector = `${this.selector}[${value}]`;
+    newSelector.selectorOrder = 4;
+
+    return newSelector;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    const newSelector = Object.create(this);
+    newSelector.checkForSelectorsOrder(5);
+
+    newSelector.selector = `${this.selector}:${value}`;
+    newSelector.selectorOrder = 5;
+
+    return newSelector;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    const newSelector = Object.create(this);
+    newSelector.checkForError('pseudoElement');
+    newSelector.checkForSelectorsOrder(6);
+
+    newSelector.selector = `${this.selector}::${value}`;
+    newSelector.hasPseudoElement = true;
+    newSelector.selectorOrder = 6;
+
+    return newSelector;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    this.selector = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    return this;
+  },
+
+  stringify() {
+    const selectorStr = this.selector;
+    this.selector = '';
+    this.hasId = false;
+    this.hasPseudoElement = false;
+    return selectorStr;
+  },
+
+  checkForError(selectorType) {
+    if (
+      (selectorType === 'element' && this.hasElement) ||
+      (selectorType === 'id' && this.hasId) ||
+      (selectorType === 'pseudoElement' && this.hasPseudoElement)
+    ) {
+      throw new Error(
+        'Identifier, element and pseudo element are repeated within the selector'
+      );
+    }
+  },
+
+  checkForSelectorsOrder(selectorPosition) {
+    if (this.selectorOrder > selectorPosition) {
+      throw new Error(
+        'The selector structure should be: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
   },
 };
 
