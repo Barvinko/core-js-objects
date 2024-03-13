@@ -355,6 +355,26 @@ const cssSelectorBuilder = {
   hasElement: false,
   selectorOrder: 0,
 
+  checkForError(selectorType) {
+    if (
+      (selectorType === 'element' && this.hasElement) ||
+      (selectorType === 'id' && this.hasId) ||
+      (selectorType === 'pseudoElement' && this.hasPseudoElement)
+    ) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+  },
+
+  checkForSelectorsOrder(selectorPosition) {
+    if (this.selectorOrder > selectorPosition) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+  },
+
   element(value) {
     const newSelector = Object.create(this);
     newSelector.checkForError('element');
@@ -432,26 +452,6 @@ const cssSelectorBuilder = {
     this.hasId = false;
     this.hasPseudoElement = false;
     return selectorStr;
-  },
-
-  checkForError(selectorType) {
-    if (
-      (selectorType === 'element' && this.hasElement) ||
-      (selectorType === 'id' && this.hasId) ||
-      (selectorType === 'pseudoElement' && this.hasPseudoElement)
-    ) {
-      throw new Error(
-        'Identifier, element and pseudo element are repeated within the selector'
-      );
-    }
-  },
-
-  checkForSelectorsOrder(selectorPosition) {
-    if (this.selectorOrder > selectorPosition) {
-      throw new Error(
-        'The selector structure should be: element, id, class, attribute, pseudo-class, pseudo-element'
-      );
-    }
   },
 };
 
